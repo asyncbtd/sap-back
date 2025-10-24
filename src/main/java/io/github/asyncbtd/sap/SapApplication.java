@@ -1,13 +1,13 @@
 package io.github.asyncbtd.sap;
 
-import io.github.asyncbtd.sap.config.prop.ImageStorageProp;
+import io.github.asyncbtd.sap.config.prop.KeycloakProps;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 @SpringBootApplication
 @EnableConfigurationProperties({
-        ImageStorageProp.class
+        KeycloakProps.class
 })
 public class SapApplication {
 

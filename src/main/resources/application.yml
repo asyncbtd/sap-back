@@ -6,5 +6,22 @@ spring:
       enabled: true
   servlet:
     multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
+      max-file-size: 15MB
+      max-request-size: 15MB
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: "${KEYCLOAK_ISSUER_URI:https://auth.asyncbtd.net/realms/public-app}"
+
+sap:
+  keycloak:
+    server-url: "${KEYCLOAK_SERVER_URI:https://auth.asyncbtd.net}"
+    realm: "${KEYCLOAK_REALM:public-app}"
+    client-id: "${KEYCLOAK_CLIENT_ID:sap-back}"
+    client-secret: "${KEYCLOAK_CLIENT_SECRET}"
+
+logging:
+  level:
+    io.github.asyncbtd.sap: debug

@@ -1,1 +1,23 @@
 name: sap-back
+
+services:
+  postgres:
+    image: docker.io/postgres:18-alpine3.22
+    container_name: sap-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: sap
+      POSTGRES_USER: sap
+      POSTGRES_PASSWORD: 2wsx@WSX
+    volumes:
+      - sap-postgres-data:/var/lib/postgresql/data
+    networks:
+      - main
+
+volumes:
+  postgres-data:
+
+networks:
+  main:
+    driver: bridge

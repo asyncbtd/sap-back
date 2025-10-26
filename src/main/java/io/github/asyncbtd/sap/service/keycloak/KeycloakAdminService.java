@@ -10,6 +10,9 @@ import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.UUID;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -29,5 +32,12 @@ public class KeycloakAdminService {
                 throw new InternalErrorHttpException("Keycloak error: " + errorMessage);
             }
         }
+    }
+
+    public UserRepresentation getUserByUsername(String username) {
+        List<UserRepresentation> users = realm.users().search(username);
+        return users.stream()
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Keycloak did not find the user"));
     }
 }

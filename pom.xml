@@ -91,6 +91,7 @@
     </dependencies>
 
     <build>
+        <finalName>sap-back</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

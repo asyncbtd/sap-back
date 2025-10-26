@@ -1,2 +1,19 @@
+/.editorconfig text eol=lf
+/.gitattributes text eol=lf
+/.gitignore text eol=lf
+
 /mvnw text eol=lf
+/Dockerfile text eol=lf
+
+*.java text eol=lf
+*.sql text eol=lf
+*.pom text eol=lf
+
+*.properties text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+
+*.html text eol=lf
+
 *.cmd text eol=crlf
+*.bat text eol=crlf

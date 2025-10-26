@@ -24,7 +24,7 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
-public class AuthController {
+public class AuthController implements AuthControllerDoc {
 
     private final UserService userService;
     private final AuthService authService;
@@ -47,16 +47,16 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    @SecurityRequirement(name = "bearerAuth")
-    public ResponseEntity<TokenResponse> refresh(@RequestBody RefreshTokenRequest refreshTokenReq) {
+    public ResponseEntity<TokenResponse> refresh(
+            @Valid @RequestBody RefreshTokenRequest refreshTokenReq
+    ) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(authService.refresh(refreshTokenReq));
     }
 
     @GetMapping("/logout")
-    @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<?> logout(
-            @RequestBody LogoutRequest logoutReq
+            @Valid @RequestBody LogoutRequest logoutReq
     ) {
         authService.logout(logoutReq);
         return ResponseEntity.status(HttpStatus.OK)

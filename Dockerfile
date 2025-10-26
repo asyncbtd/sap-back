@@ -15,7 +15,7 @@ RUN --mount=type=cache,target=/root/.m2/repository \
 RUN java -Djarmode=tools -jar ./target/sap-back.jar extract --destination /extract
 
 FROM bellsoft/liberica-openjdk-alpine-musl:25
-WORKDIR /opt/sap
+WORKDIR /opt/sap-back
 ENV TZ=Europe/Minsk
 
 ENV JAVA_OPTS="\

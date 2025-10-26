@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -53,6 +54,8 @@ public class SecurityConfig {
                     "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**",
                     "/api/v1/auth/login/**", "/api/v1/auth/register/**"
             ).permitAll();
+            auth.requestMatchers(HttpMethod.GET, "/api/v1/image/**").permitAll();
+            auth.requestMatchers(HttpMethod.POST, "/api/v1/image/**").permitAll();
             auth.anyRequest().authenticated();
         });
 

@@ -1,22 +1,21 @@
 name: sap-back
 
 services:
-  postgres:
-    image: docker.io/postgres:18-alpine3.22
-    container_name: sap-postgres
+  sap-back:
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
-      - "5432:5432"
+      - "8080:8080"
     environment:
-      POSTGRES_DB: sap
-      POSTGRES_USER: sap
-      POSTGRES_PASSWORD: 2wsx@WSX
+      KEYCLOAK_ISSUER_URI: https://auth.asyncbtd.net/realms/public-app
+      KEYCLOAK_SERVER_URI: https://auth.asyncbtd.net
+      KEYCLOAK_REALM: public-app
+      KEYCLOAK_CLIENT_SECRET: zxc
     volumes:
-      - sap-postgres-data:/var/lib/postgresql/data
+      - ./images/:/opt/sap-back/images/
     networks:
       - main
-
-volumes:
-  postgres-data:
 
 networks:
   main:

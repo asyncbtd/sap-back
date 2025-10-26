@@ -1,23 +1,25 @@
 package io.github.asyncbtd.sap.storage;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.asyncbtd.sap.config.prop.ImageStorageProps;
+import io.github.asyncbtd.sap.core.exception.BadRequestHttpException;
+import io.github.asyncbtd.sap.core.exception.InternalErrorHttpException;
+import io.github.asyncbtd.sap.core.model.ImageFormat;
+import io.github.asyncbtd.sap.core.model.ImageInfo;
 import io.github.asyncbtd.sap.core.storage.ImageStorage;
-import io.github.asyncbtd.sap.web.dto.ImageInfo;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.imageio.ImageIO;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -25,11 +27,12 @@ import java.util.stream.Stream;
 @Component
 public class FileSystemImageStorage implements ImageStorage {
 
+    private final ObjectMapper objectMapper;
     private final Path storageLocation;
 
-    public FileSystemImageStorage(@Value("${sap.image-storage.location:./images}") String location) {
-        this.storageLocation = Paths.get(location).toAbsolutePath().normalize();
-        
+    public FileSystemImageStorage(ObjectMapper objectMapper, ImageStorageProps imageStorageProps) {
+        this.objectMapper = objectMapper;
+        this.storageLocation = Paths.get(imageStorageProps.getPath()).toAbsolutePath().normalize();
         try {
             Files.createDirectories(this.storageLocation);
         } catch (IOException e) {
@@ -38,103 +41,86 @@ public class FileSystemImageStorage implements ImageStorage {
     }
 
     @Override
-    public void save(UUID imageId, MultipartFile file) {
+    public void save(ImageInfo imageInfo, MultipartFile file) {
         try {
-            String originalFilename = file.getOriginalFilename();
-            String extension = originalFilename != null && originalFilename.contains(".") 
-                ? originalFilename.substring(originalFilename.lastIndexOf("."))
-                : ".jpg";
-            
-            String filename = imageId.toString() + extension;
-            Path targetLocation = this.storageLocation.resolve(filename);
+            var imageFormat = ImageFormat.fromMimeType(file.getContentType());
+            var imagePath = storageLocation.resolve(imageInfo.id() + imageFormat.getExtension());
 
-            
-            Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+            if (imageFormat == ImageFormat.GIF) {
+                Files.copy(file.getInputStream(), imagePath, StandardCopyOption.REPLACE_EXISTING);
+            } else {
+                ImageIO.write(ImageIO.read(file.getInputStream()), "PNG", imagePath.toFile());
+            }
 
+            Path jsonPath = storageLocation.resolve(imageInfo.id() + ".json");
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(jsonPath.toFile(), imageInfo);
+
+            log.info("Saved image and metadata: {}", imageInfo);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to save file", e);
+            throw new InternalErrorHttpException("Failed to save file", e);
         }
     }
 
     @Override
     public Resource load(UUID imageId) {
+        Path file = findImageById(imageId);
+
+        if (file == null) {
+            throw new BadRequestHttpException("Image: %s not found".formatted(imageId));
+        }
+
+        return new FileSystemResource(file);
+    }
+
+    @Override
+    public ImageInfo loadImageInfo(UUID imageId) {
         try {
-            Path file = findFileByUUID(imageId);
-            
-            if (file == null) {
-                throw new RuntimeException("File not found: " + imageId);
-            }
-            
-            Resource resource = new UrlResource(file.toUri());
-            
-            if (resource.exists() && resource.isReadable()) {
-                log.info("Файл загружен: {}", file);
-                return resource;
-            } else {
-                throw new RuntimeException("Failed to read file: " + imageId);
-            }
+            return objectMapper.readValue(findImageInfoById(imageId).toFile(), ImageInfo.class);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to upload file", e);
+            throw new InternalErrorHttpException("Failed to load image-info: %s".formatted(imageId) + e);
         }
     }
 
     @Override
     public void delete(UUID imageId) {
         try {
-            Path file = findFileByUUID(imageId);
-            
-            if (file != null) {
-                Files.delete(file);
-                log.info("File deleted: {}", file);
-            } else {
-                throw new RuntimeException("File not found: " + imageId);
+            var imageFile = findImageById(imageId);
+            var imageInfoFile = findImageInfoById(imageId);
+
+            if (imageFile == null || imageInfoFile == null) {
+                throw new BadRequestHttpException("Image: %s not found".formatted(imageId));
             }
+
+            Files.delete(imageFile);
+            Files.delete(imageInfoFile);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to delete file", e);
+            throw new InternalErrorHttpException("Failed to delete image: %s".formatted(imageId), e);
         }
     }
 
-    @Override
-    public List<ImageInfo> listAll() {
-        List<ImageInfo> images = new ArrayList<>();
-        
-        try (Stream<Path> paths = Files.walk(storageLocation, 1)) {
-            paths.filter(Files::isRegularFile)
-                 .forEach(path -> {
-                     String filename = path.getFileName().toString();
-                     String uuidStr = filename.substring(0, filename.lastIndexOf('.'));
-                     UUID uuid = UUID.fromString(uuidStr);
-
-                     ImageInfo info = null;
-                     try {
-                         info = ImageInfo.builder()
-                                 .id(uuid)
-                                 .filename(filename)
-                                 .size(Files.size(path))
-                                 .contentType(Files.probeContentType(path))
-                                 .uploadedAt(LocalDateTime.ofInstant(
-                                         Files.getLastModifiedTime(path).toInstant(),
-                                         ZoneId.systemDefault()))
-                                 .build();
-                     } catch (IOException e) {
-                         throw new RuntimeException(e);
-                     }
-
-                     images.add(info);
-                 });
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to get file list", e);
-        }
-        
-        return images;
-    }
-
-    private Path findFileByUUID(UUID imageId) throws IOException {
+    private Path findImageById(UUID imageId) {
         try (Stream<Path> paths = Files.list(storageLocation)) {
             return paths
-                    .filter(path -> path.getFileName().toString().startsWith(imageId.toString()))
+                    .filter(path -> {
+                        String fileName = path.getFileName().toString();
+                        return fileName.startsWith(imageId.toString()) &&
+                               (fileName.endsWith(".gif") || fileName.endsWith(".png"));
+                    })
                     .findFirst()
                     .orElse(null);
+        } catch (IOException e) {
+            throw new InternalErrorHttpException("Failed to load image: %s".formatted(imageId), e);
+        }
+    }
+
+    private Path findImageInfoById(UUID imageId) {
+        try (Stream<Path> paths = Files.list(storageLocation)) {
+            return paths
+                    .filter(path -> path.getFileName().startsWith(imageId + ".json"))
+                    .findFirst()
+                    .orElse(null);
+        } catch (IOException e) {
+            throw new InternalErrorHttpException("Failed to load image-info: %s".formatted(imageId), e);
         }
     }
 }

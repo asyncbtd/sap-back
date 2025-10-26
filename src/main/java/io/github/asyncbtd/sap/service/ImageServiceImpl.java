@@ -1,15 +1,19 @@
 package io.github.asyncbtd.sap.service;
 
+import io.github.asyncbtd.sap.config.prop.ImageStorageProps;
+import io.github.asyncbtd.sap.core.exception.BadRequestHttpException;
+import io.github.asyncbtd.sap.core.model.ImageFormat;
+import io.github.asyncbtd.sap.core.model.ImageInfo;
 import io.github.asyncbtd.sap.core.service.ImageService;
+import io.github.asyncbtd.sap.core.service.UserService;
 import io.github.asyncbtd.sap.core.storage.ImageStorage;
-import io.github.asyncbtd.sap.web.dto.ImageInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import java.util.List;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Slf4j
@@ -18,39 +22,55 @@ import java.util.UUID;
 public class ImageServiceImpl implements ImageService {
 
     private final ImageStorage imageStorage;
+    private final ImageStorageProps imageStorageProps;
+    private final UserService userService;
 
-    public UUID saveImage(MultipartFile file) {
+    @Override
+    public ImageInfo saveImage(MultipartFile file, String description) {
         validateImage(file);
-        UUID imageId = UUID.randomUUID();
-        imageStorage.save(imageId, file);
-        return imageId;
+        var imageFormat = ImageFormat.fromMimeType(file.getContentType());
+        var imageInfo = ImageInfo.builder()
+                .id(UUID.randomUUID())
+                .contentType(imageFormat.getContentType())
+                .size(file.getSize())
+                .description(description)
+                .uploadedByUser(userService.getAuthorizedUser())
+                .dateTimeUpload(LocalDateTime.now())
+                .build();
+        imageStorage.save(imageInfo, file);
+        return imageInfo;
     }
 
-    public Resource loadImage(UUID imageId) {
-        return imageStorage.load(imageId);
+    @Override
+    public StreamingResponseBody getImage(UUID imageId) {
+        return outputStream -> {
+            try (var inputStream = imageStorage.load(imageId).getInputStream()) {
+                outputStream.write(inputStream.readAllBytes());
+            }
+        };
+    }
+
+    @Override
+    public ImageInfo getImageInfo(UUID imageId) {
+        return imageStorage.loadImageInfo(imageId);
     }
 
     public void deleteImage(UUID imageId) {
         imageStorage.delete(imageId);
     }
 
-    public List<ImageInfo> getAllImages() {
-        return imageStorage.listAll();
-    }
-
     private void validateImage(MultipartFile file) {
         if (file.isEmpty()) {
-            throw new IllegalArgumentException("Файл пустой");
+            throw new BadRequestHttpException("File is empty");
         }
 
-        String contentType = file.getContentType();
-        if (contentType == null || !contentType.startsWith("image/")) {
-            throw new IllegalArgumentException("The file is not an image");
+        if (file.getContentType() == null || !file.getContentType().startsWith("image/")) {
+            throw new BadRequestHttpException("The file is not an image");
         }
 
-        long maxSize = 10 * 1024 * 1024;
-        if (file.getSize() > maxSize) {
-            throw new IllegalArgumentException("The file size exceeds 10MB");
+        var maxSize = imageStorageProps.getMaxSize();
+        if (file.getSize() > maxSize.toBytes()) {
+            throw new BadRequestHttpException("The file size exceeds " + maxSize.toMegabytes() + "MB");
         }
     }
 }

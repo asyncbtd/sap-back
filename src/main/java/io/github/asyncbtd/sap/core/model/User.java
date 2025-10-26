@@ -6,7 +6,7 @@ import java.util.UUID;
 
 @Builder(toBuilder = true)
 public record User(
-        UUID uuid,
+        UUID id,
         String username,
         String password,
         Email email

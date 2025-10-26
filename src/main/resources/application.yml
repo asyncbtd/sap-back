@@ -13,14 +13,20 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: "${KEYCLOAK_ISSUER_URI:https://auth.asyncbtd.net/realms/public-app}"
+          issuer-uri: "${KEYCLOAK_ISSUER_URI}"
 
 sap:
   keycloak:
-    server-url: "${KEYCLOAK_SERVER_URI:https://auth.asyncbtd.net}"
-    realm: "${KEYCLOAK_REALM:public-app}"
-    client-id: "${KEYCLOAK_CLIENT_ID:sap-back}"
+    server-url: "${KEYCLOAK_SERVER_URI}"
+    realm: "${KEYCLOAK_REALM}"
+    client-id: "${KEYCLOAK_CLIENT_ID}"
     client-secret: "${KEYCLOAK_CLIENT_SECRET}"
+  image-storage:
+    path: ./images
+    max-size: 10MB
+  openapi:
+    url: "${OPENAPI_SERVER_URI}"
+    version: 2.0.0
 
 logging:
   level:

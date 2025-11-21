@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Builder(toBuilder = true)
@@ -19,6 +20,8 @@ public record ImageInfo(
         @JsonProperty("uploaded_by_user")
         User uploadedByUser,
         @JsonProperty("date_time_upload")
-        LocalDateTime dateTimeUpload
+        LocalDateTime dateTimeUpload,
+        @JsonProperty("available_formats")
+        List<String> availableFormats
 ) {
 }

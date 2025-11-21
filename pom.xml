@@ -82,6 +82,13 @@
             <version>${keycloak.version}</version>
         </dependency>
 
+        <!-- ===== ===== ===== ===== DATA ===== ===== ===== ===== -->
+        <dependency>
+            <groupId>org.opensearch.client</groupId>
+            <artifactId>opensearch-java</artifactId>
+            <version>3.2.0</version>
+        </dependency>
+
         <!-- ===== ===== ===== ===== TEST ===== ===== ===== ===== -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

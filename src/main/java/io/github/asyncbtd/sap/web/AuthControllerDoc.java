@@ -7,7 +7,6 @@ import io.github.asyncbtd.sap.web.dto.RegisterRequest;
 import io.github.asyncbtd.sap.web.dto.TokenResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestBody;
 
 public interface AuthControllerDoc {
 

@@ -1,6 +1,45 @@
 name: sap-back
 
 services:
+  opensearch:
+    image: docker.io/opensearchproject/opensearch:3.3.2
+    container_name: opensearch
+    environment:
+      - discovery.type=single-node
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=1qaz@WSX3edc
+      - DISABLE_SECURITY_PLUGIN=false
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    networks:
+      - main
+
+  minio:
+    image: docker.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
+    container_name: minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    networks:
+      - main
+
   sap-back:
     build:
       context: .
@@ -16,6 +55,12 @@ services:
       - ./images/:/opt/sap-back/images/
     networks:
       - main
+
+volumes:
+  opensearch-data:
+    driver: local
+  minio-data:
+    driver: local
 
 networks:
   main:

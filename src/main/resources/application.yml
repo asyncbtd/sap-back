@@ -21,9 +21,26 @@ sap:
     realm: "${KEYCLOAK_REALM}"
     client-id: "${KEYCLOAK_CLIENT_ID}"
     client-secret: "${KEYCLOAK_CLIENT_SECRET}"
+  opensearch:
+    scheme: http
+    host: 192.168.8.116
+    port: 9200
+    index-name: images
+    username: admin
+    password: 1qaz@WSX3edc
   image-storage:
     path: ./images
     max-size: 10MB
+    supported-formats:
+      gif: true
+      png: true
+      jpeg: true
+      webp: true
+      bmp: false   # BMP загрузка разрешена только если true
+      tiff: false  # TIFF загрузка разрешена только если true
+      ico: false   # ICO загрузка разрешена только если true
+      svg: false   # SVG загрузка разрешена только если true
+
   openapi:
     url: "${OPENAPI_SERVER_URI}"
     version: 2.0.0

@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface ImageControllerDoc {
@@ -26,5 +27,9 @@ public interface ImageControllerDoc {
     @SecurityRequirement(name = "bearerAuth")
     ResponseEntity<?> deleteImage(
             UUID uuid
+    );
+
+    ResponseEntity<List<UUID>> searchImages(
+            String query
     );
 }
